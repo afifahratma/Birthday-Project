@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level Up! Birthday Edition</title>
+    
+    <!-- Google Fonts: Pixel & Retro style -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        /* --- CUSTOM RETRO STYLES --- */
+        :root {
+            --bg-color: #1a1a2e;
+            --accent-green: #4ade80;
+            --accent-pink: #f472b6;
+            --text-main: #e2e8f0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'VT323', monospace;
+            overflow-x: hidden;
+            cursor: crosshair;
+        }
+
+        /* Pixel Font for Headings */
+        h1, h2, h3, .pixel-font {
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        /* CRT Scanline Effect */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.1) 50%,
+                rgba(0,0,0,0.1)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Retro Button Style */
+        .btn-retro {
+            box-shadow: 4px 4px 0px 0px var(--accent-green);
+            transition: all 0.1s;
+        }
+        .btn-retro:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px 0px var(--accent-green);
+        }
+        
+        .btn-retro-pink {
+            box-shadow: 4px 4px 0px 0px var(--accent-pink);
+        }
+        .btn-retro-pink:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px 0px var(--accent-pink);
+        }
+
+        /* Cards */
+        .pixel-card {
+            border: 2px solid #334155;
+            position: relative;
+            background: #0f172a;
+        }
+        .pixel-card::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            right: -4px;
+            bottom: -4px;
+            background: #334155;
+            z-index: -1;
+        }
+
+        /* Animations */
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .animate-blink {
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Progress Bar */
+        .stat-bar-container {
+            background: #333;
+            height: 20px;
+            border: 2px solid #fff;
+            padding: 2px;
+        }
+        .stat-bar-fill {
+            height: 100%;
+            background: var(--accent-green);
+            width: 0%; 
+            transition: width 1.5s ease-out;
+        }
+
+        /* Scroll Reveal */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Hug Animation Keyframes */
+        @keyframes hug-move-right {
+            0% { transform: translateX(-50px); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(10px); } /* Move to center */
+        }
+        @keyframes hug-move-left {
+            0% { transform: translateX(50px); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(-10px); } /* Move to center */
+        }
+        @keyframes heart-pop {
+            0% { transform: scale(0); opacity: 0; }
+            80% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .animate-hug-right {
+            animation: hug-move-right 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .animate-hug-left {
+            animation: hug-move-left 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .animate-heart-pop {
+            animation: heart-pop 0.5s ease-out 0.8s forwards; /* Delay so it pops after they meet */
+            opacity: 0; /* Start hidden */
+        }
+
+        /* --- NEW BUFF HOVER EFFECTS --- */
+        .buff-card {
+            padding: 10px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .buff-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: scale(1.02);
+        }
+
+        /* Money Effect */
+        .buff-money:hover .stat-bar-container {
+            animation: shake 0.4s infinite; /* Getar pas di hover */
+            border-color: #fbbf24; /* Jadi warna emas */
+            box-shadow: 0 0 15px #fbbf24;
+        }
+        .buff-money:hover .stat-bar-fill {
+            background-color: #fbbf24;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px) rotate(-1deg); }
+            75% { transform: translateX(2px) rotate(1deg); }
+        }
+
+        /* Particles Animation */
+        @keyframes float-particle {
+            0% { transform: translateY(0) scale(0.5); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-30px) scale(1.2); opacity: 0; }
+        }
+        .particle {
+            position: absolute;
+            top: 0;
+            right: 10px;
+            pointer-events: none;
+            display: none;
+        }
+        .buff-card:hover .particle {
+            display: block;
+            animation: float-particle 1s ease-out infinite;
+        }
+
+        /* Gift Animation */
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 5px rgba(255,255,255,0.5)); }
+            50% { filter: drop-shadow(0 0 20px rgba(255,192,203,0.8)); }
+        }
+        .animate-glow {
+            animation: glow 2s infinite;
+        }
+
+        /* --- MEMORY GAME STYLES --- */
+        .memory-game-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            perspective: 1000px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        .memory-card {
+            width: 100%;
+            aspect-ratio: 1; /* Keep it square */
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+            cursor: pointer;
+        }
+        .memory-card.flip {
+            transform: rotateY(180deg);
+        }
+        .front-face, .back-face {
+            width: 100%;
+            height: 100%;
+            padding: 5px;
+            position: absolute;
+            border-radius: 5px;
+            background: #1e293b;
+            border: 2px solid #4ade80;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+        .front-face {
+            transform: rotateY(180deg);
+            background: #0f172a;
+        }
+        .back-face {
+            color: #4ade80;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1.5rem;
+            background: #111;
+            /* Pattern for back of card */
+            background-image: repeating-linear-gradient(45deg, #111 25%, transparent 25%, transparent 75%, #111 75%, #111), repeating-linear-gradient(45deg, #111 25%, #1a1a2e 25%, #1a1a2e 75%, #111 75%, #111);
+            background-position: 0 0, 10px 10px;
+            background-size: 20px 20px;
+        }
+        
+        /* Character Card Selection */
+        .char-card.selected {
+            border-color: #4ade80;
+            background-color: #064e3b;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(74, 222, 128, 0.2);
+        }
+        .char-card.selected .check-icon {
+            opacity: 1;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- CRT Overlay -->
+    <div class="scanlines"></div>
+
+    <!-- AUDIO SYSTEM (Hidden) -->
+    <!-- We use Web Audio API in JS, so no audio tag needed -->
+
+    <!-- LOADING SCREEN -->
+    <div id="loading-screen" class="fixed inset-0 z-[100] bg-[#0f172a] flex flex-col items-center justify-center text-green-400">
+        <!-- New Level Header -->
+        <h2 class="pixel-font text-2xl md:text-4xl mb-6 text-yellow-400 animate-pulse text-center">
+            Getting ready for Level 25…
+        </h2>
+        
+        <!-- Level Indicators -->
+        <div class="w-64 md:w-96 flex justify-between mb-2 pixel-font text-sm md:text-base text-gray-400 font-bold">
+            <span>Lv. 24</span>
+            <span class="animate-bounce">➔</span>
+            <span class="text-white">Lv. 25</span>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-64 md:w-96 border-4 border-white p-1 bg-black shadow-[0_0_15px_rgba(74,222,128,0.3)]">
+            <div id="loading-bar" class="h-6 md:h-8 bg-gradient-to-r from-green-500 to-emerald-400 w-0 transition-all duration-300 relative overflow-hidden">
+                <!-- Shine effect on bar -->
+                <div class="absolute inset-0 bg-white/20 w-full h-full transform -skew-x-12 translate-x-[-100%] animate-[shimmer_2s_infinite]"></div>
+            </div>
+        </div>
+        
+        <!-- Dynamic Loading Text -->
+        <p id="loading-text" class="mt-6 text-lg font-mono text-gray-300 h-6 text-center">
+            Saving Level 24 progress...
+        </p>
+    </div>
+
+    <!-- HUG POPUP MODAL (Hidden by default) -->
+    <div id="hug-modal" class="fixed inset-0 z-[200] bg-black/80 hidden items-center justify-center backdrop-blur-sm p-4">
+        <div class="pixel-card p-6 md:p-8 text-center max-w-sm w-full relative transform scale-100">
+            <!-- Close Button -->
+            <button onclick="closeHugModal()" class="absolute top-3 right-3 text-gray-500 hover:text-red-500 pixel-font text-xl">X</button>
+            
+            <h3 class="pixel-font text-lg md:text-xl text-pink-400 mb-8 border-b-2 border-pink-900 pb-4">
+                VIRTUAL HUG SENT!
+            </h3>
+            
+            <!-- Animation Container -->
+            <div class="h-32 flex justify-center items-center relative mb-6">
+                <!-- Male Avatar (Left) -->
+                <!-- Feel free to change seed=Bby to seed=YourName for different look -->
+                <img src="https://api.dicebear.com/9.x/pixel-art/svg?seed=Bby&hair=short02" 
+                     class="w-24 h-24 absolute left-[10%] animate-hug-right z-10" 
+                     alt="Boy">
+                
+                <!-- Heart Icon (Middle) -->
+                <div class="absolute z-30 text-5xl animate-heart-pop drop-shadow-lg">
+                    ❤️
+                </div>
+
+                <!-- Female Avatar (Right) -->
+                <!-- Change seed=Love to seed=HerName -->
+                <img src="https://api.dicebear.com/9.x/pixel-art/svg?seed=Nabila&hair=long01" 
+                     class="w-24 h-24 absolute right-[10%] animate-hug-left z-20 scale-x-[-1]" 
+                     alt="Girl">
+                
+                <!-- Note: scale-x-[-1] flips the girl image so she faces left (towards the boy) -->
+            </div>
+            
+            <div class="space-y-2">
+                <p class="text-white pixel-font text-sm">Transferring warmth...</p>
+                <div class="h-2 w-full bg-gray-700 rounded-full overflow-hidden">
+                    <div class="h-full bg-pink-500 animate-[width_2s_ease-out_forwards] w-[0%] transition-all duration-[2000ms]" style="width: 100%"></div>
+                </div>
+                <p class="text-gray-400 text-xs mt-4 italic">(Redeem peluk aslinya ASAP ya!)</p>
+            </div>
+
+            <button onclick="closeHugModal()" class="mt-6 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 pixel-font text-xs w-full">
+                CLOSE
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN APP WRAPPER (Hidden initially) -->
+    <main id="app" class="hidden min-h-screen pb-20">
+        
+        <!-- HERO SECTION -->
+        <section class="h-screen flex flex-col items-center justify-center text-center p-4 relative overflow-hidden">
+            <!-- Background Decoration -->
+            <div class="absolute inset-0 opacity-20 pointer-events-none">
+                <div class="absolute top-10 left-10 text-6xl">👾</div>
+                <div class="absolute bottom-20 right-10 text-6xl">🎮</div>
+                <div class="absolute top-1/2 left-10 text-4xl">⭐</div>
+            </div>
+
+            <div class="z-10 animate-float flex flex-col items-center">
+                
+                <!-- PLAYER PHOTO / AVATAR AREA -->
+                <!-- Ganti 'src' di bawah ini dengan URL foto pacarmu. 
+                     Tips: Gunakan foto rasio 1:1 (kotak) agar pas. -->
+                <div class="relative w-28 h-28 md:w-40 md:h-40 mb-6 border-4 border-white bg-gray-800 shadow-[8px_8px_0px_0px_rgba(74,222,128,1)] overflow-hidden">
+                    <img src="./Asset/X.png" alt="Player Avatar" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500">
+                    <!-- Overlay scanline effect pada foto -->
+                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black opacity-20 pointer-events-none"></div>
+                </div>
+
+                <span class="inline-block px-4 py-1 border-2 border-green-400 text-green-400 mb-6 text-xl tracking-widest">
+                    SYSTEM MESSAGE • 01 JAN 2025
+                </span>
+                <h1 class="pixel-font text-3xl md:text-5xl lg:text-6xl text-white leading-tight mb-4">
+                    LEVEL UP!<br>
+                    <span class="text-green-400">Congrats, you leveled up 🎮</span>
+                </h1>
+                
+                <h2 class="text-xl md:text-2xl text-gray-300 mb-8 max-w-2xl mx-auto">
+                    <span class="text-yellow-400 font-bold block mb-2">+1 Level Achieved.</span>
+                    Still my MVP, no debat.
+                </h2>
+
+                <button onclick="startGame()" class="btn-retro bg-green-500 hover:bg-green-600 text-black font-bold py-4 px-8 text-2xl pixel-font inline-flex items-center gap-2">
+                    <i data-lucide="play" class="w-6 h-6"></i> START THE GAME
+                </button>
+            </div>
+        </section>
+
+        <!-- SECTION 1: CHARACTER SELECT (REPLACED) -->
+        <section id="game-content" class="container mx-auto px-4 py-16 hidden">
+            <div class="text-center mb-12 reveal">
+                <h2 class="pixel-font text-2xl md:text-4xl text-yellow-400 mb-4">SELECT YOUR CHARACTER</h2>
+                <p class="text-gray-400 text-lg md:text-xl pixel-font">New year. New level. Who do you want to be this year?</p>
+                <div class="w-24 h-1 bg-yellow-400 mx-auto mt-4"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Character 1: The Calm Builder -->
+                <div class="pixel-card p-6 reveal hover:scale-105 transition-all duration-300 cursor-pointer group char-card" 
+                     onclick="selectCharacter(this)"
+                     data-name="THE CALM BUILDER"
+                     data-msg="Slow progress is still progress. Bangun pelan-pelan, yang penting kokoh.">
+                    <div class="text-green-400 text-4xl mb-4 group-hover:animate-bounce"><i data-lucide="hammer"></i></div>
+                    <h3 class="pixel-font text-lg text-white mb-1">The Calm Builder</h3>
+                    <p class="text-xs text-green-400 mb-4 uppercase tracking-widest font-bold">Role: Stability / Growth</p>
+                    <p class="text-gray-300 mb-4 text-sm leading-relaxed">Fokus bangun hidup pelan-pelan. Nggak keburu-buru, tapi konsisten.</p>
+                    
+                    <div class="space-y-1 text-xs font-mono text-gray-400 border-t border-gray-700 pt-3">
+                        <div class="flex justify-between"><span>Patience</span> <span class="text-green-400">↑ High</span></div>
+                        <div class="flex justify-between"><span>Focus</span> <span class="text-green-400">↑ Sharp</span></div>
+                        <div class="flex justify-between"><span>Stress</span> <span class="text-blue-400">↓ Low</span></div>
+                    </div>
+
+                    <!-- Check Icon (Hidden by default) -->
+                    <div class="check-icon absolute top-3 right-3 text-green-400 opacity-0 transition-opacity duration-300">
+                        <i data-lucide="check-circle-2" class="w-6 h-6 fill-green-900"></i>
+                    </div>
+                </div>
+
+                <!-- Character 2: The Quiet Achiever -->
+                <div class="pixel-card p-6 reveal hover:scale-105 transition-all duration-300 cursor-pointer group char-card delay-100" 
+                     onclick="selectCharacter(this)"
+                     data-name="THE QUIET ACHIEVER"
+                     data-msg="Silent moves, loud results. Biarkan pencapaianmu yang bicara.">
+                    <div class="text-blue-400 text-4xl mb-4 group-hover:animate-bounce"><i data-lucide="briefcase"></i></div>
+                    <h3 class="pixel-font text-lg text-white mb-1">The Quiet Achiever</h3>
+                    <p class="text-xs text-blue-400 mb-4 uppercase tracking-widest font-bold">Role: Career / Progress</p>
+                    <p class="text-gray-300 mb-4 text-sm leading-relaxed">Nggak banyak cerita, tapi hasilnya kerasa. Silent but deadly (in a good way).</p>
+                    
+                    <div class="space-y-1 text-xs font-mono text-gray-400 border-t border-gray-700 pt-3">
+                        <div class="flex justify-between"><span>Discipline</span> <span class="text-green-400">↑ Max</span></div>
+                        <div class="flex justify-between"><span>Confidence</span> <span class="text-green-400">↑ High</span></div>
+                        <div class="flex justify-between"><span>Energy</span> <span class="text-yellow-400">→ Stable</span></div>
+                    </div>
+
+                    <div class="check-icon absolute top-3 right-3 text-green-400 opacity-0 transition-opacity duration-300">
+                        <i data-lucide="check-circle-2" class="w-6 h-6 fill-green-900"></i>
+                    </div>
+                </div>
+
+                <!-- Character 3: The Balanced Player -->
+                <div class="pixel-card p-6 reveal hover:scale-105 transition-all duration-300 cursor-pointer group char-card delay-200" 
+                     onclick="selectCharacter(this)"
+                     data-name="THE BALANCED PLAYER"
+                     data-msg="Work hard, rest well. Jangan lupa napas di antara ambisi.">
+                    <div class="text-purple-400 text-4xl mb-4 group-hover:animate-bounce"><i data-lucide="scale"></i></div>
+                    <h3 class="pixel-font text-lg text-white mb-1">The Balanced Player</h3>
+                    <p class="text-xs text-purple-400 mb-4 uppercase tracking-widest font-bold">Role: Life Balance</p>
+                    <p class="text-gray-300 mb-4 text-sm leading-relaxed">Kerja jalan, hidup juga dinikmatin. No more burnout, please.</p>
+                    
+                    <div class="space-y-1 text-xs font-mono text-gray-400 border-t border-gray-700 pt-3">
+                        <div class="flex justify-between"><span>Balance</span> <span class="text-green-400">↑ Perfect</span></div>
+                        <div class="flex justify-between"><span>Joy</span> <span class="text-green-400">↑ High</span></div>
+                        <div class="flex justify-between"><span>Burnout</span> <span class="text-red-400">↓ Zero</span></div>
+                    </div>
+
+                    <div class="check-icon absolute top-3 right-3 text-green-400 opacity-0 transition-opacity duration-300">
+                        <i data-lucide="check-circle-2" class="w-6 h-6 fill-green-900"></i>
+                    </div>
+                </div>
+
+                <!-- Character 4: The Main Character -->
+                <div class="pixel-card p-6 reveal hover:scale-105 transition-all duration-300 cursor-pointer group char-card delay-300" 
+                     onclick="selectCharacter(this)"
+                     data-name="THE MAIN CHARACTER"
+                     data-msg="Your story, your rules. Tahun ini, lakuin apa yang bikin KAMU happy.">
+                    <div class="text-pink-400 text-4xl mb-4 group-hover:animate-bounce"><i data-lucide="crown"></i></div>
+                    <h3 class="pixel-font text-lg text-white mb-1">The Main Character</h3>
+                    <p class="text-xs text-pink-400 mb-4 uppercase tracking-widest font-bold">Role: Confidence</p>
+                    <p class="text-gray-300 mb-4 text-sm leading-relaxed">Lebih berani milih diri sendiri, tanpa harus jadi orang lain. You do you.</p>
+                    
+                    <div class="space-y-1 text-xs font-mono text-gray-400 border-t border-gray-700 pt-3">
+                        <div class="flex justify-between"><span>Self-trust</span> <span class="text-green-400">↑ Max</span></div>
+                        <div class="flex justify-between"><span>Courage</span> <span class="text-green-400">↑ High</span></div>
+                        <div class="flex justify-between"><span>Freedom</span> <span class="text-green-400">↑ High</span></div>
+                    </div>
+
+                    <div class="check-icon absolute top-3 right-3 text-green-400 opacity-0 transition-opacity duration-300">
+                        <i data-lucide="check-circle-2" class="w-6 h-6 fill-green-900"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Selection Message (Hidden initially) -->
+            <div id="char-selection-msg" class="text-center mt-12 opacity-0 transition-opacity duration-500 pointer-events-none">
+                <p id="char-selection-title" class="pixel-font text-green-400 text-xl animate-pulse">CHARACTER SELECTED.</p>
+                <p id="char-selection-desc" class="text-gray-400 text-md mt-2">Pelan aja, yang penting jalan.</p>
+            </div>
+        </section>
+
+        <!-- SECTION 2: WHY YOU -->
+        <section class="container mx-auto px-4 py-16 reveal">
+            <div class="border-4 border-dashed border-gray-600 p-8 md:p-12 rounded-lg bg-[#111]">
+                <h2 class="pixel-font text-2xl md:text-3xl text-pink-400 mb-8 text-center">Terima Kasih Sudah Hidup!</h2>
+                
+                <div class="max-w-3xl mx-auto text-center space-y-6 text-xl md:text-2xl leading-relaxed">
+                    <p>Terima kasih karena kamu masih ada sampai hari ini,</p>
+                    <p class="text-white font-bold">Masih berjuang sampe di titik saat ini aja udah hebat</p>
+                    <p>aku tau semua ini ga gampang tapi you did best!</p>
+                    <p class="italic text-gray-400">"Aku harap hari-hari seterusnya lebih mudah dari yang kemarin."</p>
+                    <p class="pixel-font text-yellow-400 text-lg mt-4 animate-pulse">Makasih ya,udah sampai sejauh ini.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: LIFE STORY UNLOCKED -->
+        <section class="container mx-auto px-4 py-16">
+            <div class="text-center mb-12 reveal">
+                <h2 class="pixel-font text-2xl md:text-4xl text-blue-400 mb-4">📜 LIFE STORY UNLOCKED</h2>
+                <p class="text-gray-400 text-lg">Beberapa momen yang ngebentuk kamu.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Level 01 -->
+                <div class="bg-gray-800 p-6 border-l-4 border-blue-500 flex items-start gap-4 reveal hover:bg-gray-700 transition-colors">
+                    <div class="bg-blue-900 p-3 rounded shrink-0 mt-1">👶</div>
+                    <div>
+                        <h4 class="font-bold text-white text-xl mb-2">Level 01 — Day One</h4>
+                        <p class="text-gray-400 text-base leading-relaxed">01 01 2001  <br>Rafi was born</p>
+                    </div>
+                </div>
+                <!-- Level 02 -->
+                <div class="bg-gray-800 p-6 border-l-4 border-green-500 flex items-start gap-4 reveal hover:bg-gray-700 transition-colors">
+                    <div class="bg-green-900 p-3 rounded shrink-0 mt-1">🌱</div>
+                    <div>
+                        <h4 class="font-bold text-white text-xl mb-2">Level 02 — Growing Up</h4>
+                        <p class="text-gray-400 text-base leading-relaxed">Awal dari segalanya<br>mulai belajar segala hal.</p>
+                    </div>
+                </div>
+                <!-- Level 03 -->
+                <div class="bg-gray-800 p-6 border-l-4 border-purple-500 flex items-start gap-4 reveal hover:bg-gray-700 transition-colors">
+                    <div class="bg-purple-900 p-3 rounded shrink-0 mt-1">💼</div>
+                    <div>
+                        <h4 class="font-bold text-white text-xl mb-2">Level 03 — Real Life</h4>
+                        <p class="text-gray-400 text-base leading-relaxed">Kerja pertama, capek pertama,<br>mulai ngerti pahitnya dunia</p>
+                    </div>
+                </div>
+                <!-- Level 04 -->
+                <div class="bg-gray-800 p-6 border-l-4 border-pink-500 flex items-start gap-4 reveal hover:bg-gray-700 transition-colors">
+                    <div class="bg-pink-900 p-3 rounded shrink-0 mt-1">👩‍❤️‍👨</div>
+                    <div>
+                        <h4 class="font-bold text-white text-xl mb-2">Level 04 — Us</h4>
+                        <p class="text-gray-400 text-base leading-relaxed">Terus, kamu ketemu aku.<br>Semoga masih sama sama terus selanjutnya</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-8 reveal">
+                <p class="text-gray-500 italic text-sm md:text-base pixel-font animate-pulse">
+                    Semoga di Level kamu berikutnya<br>Masih ada aku disisi kamu. 
+                </p>
+            </div>
+        </section>
+
+        <!-- SECTION 4: MAIN MESSAGE -->
+        <section class="py-16 bg-gray-900 border-y-4 border-white reveal">
+            <div class="container mx-auto px-4 text-center">
+                <div class="inline-flex items-center gap-2 bg-pink-500 text-white px-6 py-2 mb-6 pixel-font border-2 border-pink-300 shadow-[4px_4px_0px_0px_#be185d] animate-pulse">
+                    <i data-lucide="heart" class="w-5 h-5 fill-current"></i>
+                    MESSAGE FROM ME
+                    <i data-lucide="heart" class="w-5 h-5 fill-current"></i>
+                </div>
+                
+                <h2 class="pixel-font text-2xl md:text-4xl mb-8">Happy Level Up Day,<br>Bby!</h2>
+                
+                <div class="max-w-2xl mx-auto text-xl md:text-2xl space-y-6 text-gray-300">
+                    <p>Welcome to Level 25. Semoga di maplevel baru ini, rintangannya mudah untuk dilalui, rezekinya makin banyak, dan semakin bahagiaaa!</p>
+                    <p>Kalau hidup lagi berat, just remember:</p>
+                    <div class="p-6 border-2 border-white inline-block mt-4 bg-black">
+                        <p class="text-green-400 pixel-font text-lg">You have a support system.</p>
+                        <p class="text-green-400 pixel-font text-lg mt-2">Me. Ready to call anytime. 🩹</p>
+                    </div>
+                </div>
+            </div>
+             <!-- SPECIAL GIFT SECTION -->
+        <div class="text-center py-12">
+            <div class="relative inline-block group">
+                <!-- Gift Button -->
+                <button id="gift-btn" class="btn-retro-pink bg-pink-500 hover:bg-pink-600 text-white p-6 rounded-lg animate-bounce transition-transform transform hover:scale-110">
+                    <i data-lucide="gift" class="w-12 h-12"></i>
+                    <div class="mt-2 pixel-font text-sm">OPEN ME</div>
+                </button>
+            </div>
+            
+
+            <!-- Content Revealed After Click -->
+            <div id="gift-content" class="hidden mt-8 transition-all duration-500">
+                <div class="flex justify-center gap-6 mb-6 text-6xl animate-float">
+                    <span class="drop-shadow-[0_0_20px_rgba(255,0,50,0.8)]">🌹</span>
+                    <span class="drop-shadow-[0_0_20px_rgba(139,69,19,0.8)]">🍫</span>
+                </div>
+                <div class="pixel-card p-8 inline-block border-pink-400 bg-pink-900/40 backdrop-blur-sm animate-glow">
+                    <h3 class="pixel-font text-3xl text-pink-300 mb-2 font-bold">happy birthday!</h3>
+                    <p class="pixel-font text-2xl text-white">ilysm!!! <3</p>
+                </div>
+            </div>
+        </div>
+        </section>
+
+        <!-- SECTION 5: BUFFS -->
+        <section class="container mx-auto px-4 py-16 max-w-2xl">
+            <h2 class="pixel-font text-center text-2xl md:text-3xl text-yellow-400 mb-12 reveal">✨ Birthday Buffs Activated</h2>
+            
+            <div class="space-y-6 reveal">
+                
+                <!-- Buff 1: Money (NEW & HIGHLIGHTED) -->
+                <div class="buff-card buff-money group cursor-pointer">
+                    <div class="flex justify-between mb-1">
+                        <span class="pixel-font text-sm text-green-400 group-hover:text-yellow-400 transition-colors">Money / Rejeki</span>
+                        <span class="pixel-font text-sm text-white group-hover:text-yellow-400 font-bold">UNLIMITED 9999+</span>
+                    </div>
+                    <div class="stat-bar-container border-green-500 relative">
+                        <div class="stat-bar-fill w-[100%] bg-green-500 shadow-[0_0_10px_#4ade80]"></div>
+                        <!-- Efek uang muncul saat hover -->
+                        <div class="particle text-2xl" style="right: 5%; animation-delay: 0s">💸</div>
+                        <div class="particle text-xl" style="right: 15%; animation-delay: 0.2s">💰</div>
+                        <div class="particle text-2xl" style="right: 25%; animation-delay: 0.4s">💵</div>
+                    </div>
+                    <p class="text-[10px] text-gray-500 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">*Auto rich. Aamiin.</p>
+                </div>
+
+                <!-- Buff 2: Health -->
+                <div class="buff-card group cursor-pointer">
+                    <div class="flex justify-between mb-1">
+                        <span class="pixel-font text-sm text-red-400">Health (Fisik & Mental)</span>
+                        <span class="pixel-font text-sm text-white">+100</span>
+                    </div>
+                    <div class="stat-bar-container">
+                        <div class="stat-bar-fill w-[100%] bg-red-500 group-hover:shadow-[0_0_10px_#ef4444] transition-shadow"></div>
+                        <div class="particle text-xl" style="right: 10%">❤️</div>
+                        <div class="particle text-xl" style="right: 20%; animation-delay: 0.3s">💊</div>
+                    </div>
+                </div>
+                
+                <!-- Buff 3: Luck -->
+                <div class="buff-card group cursor-pointer">
+                    <div class="flex justify-between mb-1">
+                        <span class="pixel-font text-sm text-yellow-400">Luck / Hoki</span>
+                        <span class="pixel-font text-sm text-white">+200</span>
+                    </div>
+                    <div class="stat-bar-container">
+                        <div class="stat-bar-fill w-[100%] bg-yellow-400 group-hover:shadow-[0_0_10px_#facc15] transition-shadow"></div>
+                        <div class="particle text-xl" style="right: 10%">✨</div>
+                        <div class="particle text-xl" style="right: 20%; animation-delay: 0.3s">⭐</div>
+                    </div>
+                </div>
+
+                <!-- Buff 4: Stress (Reduced) -->
+                <div class="buff-card group cursor-pointer">
+                    <div class="flex justify-between mb-1">
+                        <span class="pixel-font text-sm text-blue-400">Overthinking</span>
+                        <span class="pixel-font text-sm text-white">-50 (Reduced)</span>
+                    </div>
+                    <div class="stat-bar-container">
+                        <div class="stat-bar-fill w-[20%] bg-blue-500 group-hover:bg-blue-300 transition-colors"></div>
+                        <div class="particle text-sm text-blue-300" style="right: 10%">chill...</div>
+                        <div class="particle text-sm text-blue-300" style="right: 30%; animation-delay: 0.5s">santuy...</div>
+                    </div>
+                </div>
+
+                <!-- Buff 5: Love -->
+                <div class="buff-card group cursor-pointer">
+                    <div class="flex justify-between mb-1">
+                        <span class="pixel-font text-sm text-pink-400">My Love for You</span>
+                        <span class="pixel-font text-sm text-white">INFINITE</span>
+                    </div>
+                    <div class="stat-bar-container border-pink-500">
+                        <div class="stat-bar-fill w-[100%] bg-pink-500 animate-pulse group-hover:shadow-[0_0_15px_#ec4899]"></div>
+                        <div class="particle text-xl" style="right: 5%">💖</div>
+                        <div class="particle text-xl" style="right: 15%; animation-delay: 0.2s">🥰</div>
+                        <div class="particle text-xl" style="right: 25%; animation-delay: 0.4s">💌</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 6: PROMISE -->
+        <section class="container mx-auto px-4 py-16 text-center reveal">
+            <div class="bg-[#1a1a2e] p-8 relative">
+                <span class="text-6xl absolute top-0 left-0 opacity-10">❝</span>
+                <h2 class="pixel-font text-2xl text-white mb-6">🤍 Sedikit catatan buat kamu</h2>
+                <p class="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
+                    Semangat ya buat menjalani kehidupan yang kayak tai ini.
+                    Walaupun berat, aku tau kamu bisaaa!! jangan nyerah, kalo ada sesuatu boleh cerita ke aku
+                    <i>tetep jadi <b>rafi ubaid</b> yang aku kenal ya!!</i> 
+                    <span class="text-green-400">Jangan lupa komunikasi dijaga!</span>
+                </p>
+                <span class="text-6xl absolute bottom-0 right-0 opacity-10">❞</span>
+            </div>
+        </section>
+
+       
+
+        <!-- SECTION 7: MINI GAME (MEMORY MATCH) -->
+        <section class="container mx-auto px-4 py-16 text-center border-t-4 border-gray-700 bg-[#0b101f]">
+            <h2 class="pixel-font text-xl md:text-3xl text-yellow-400 mb-4 flex justify-center items-center gap-2">
+                <i data-lucide="gamepad-2"></i> BONUS STAGE <i data-lucide="gamepad-2"></i>
+            </h2>
+            <p class="text-gray-400 mb-8 max-w-lg mx-auto">Match all pairs to unlock a secret reward!</p>
+
+            <!-- Game Grid -->
+            <div id="game-board" class="memory-game-grid">
+                <!-- Cards will be injected by JS -->
+            </div>
+
+            <!-- Reward Container (Hidden) -->
+            <div id="game-reward" class="hidden mt-8 animate-float">
+                <div class="pixel-card p-6 bg-green-900/30 border-green-400 inline-block max-w-md w-full">
+                    <div class="text-green-400 text-4xl mb-4">🏆 STAGE CLEARED!</div>
+                    
+                    <!-- Reward Image Placeholder -->
+                    <div class="relative w-full aspect-video bg-black border-2 border-white mb-4 overflow-hidden group">
+                        <!-- GANTI 'src' DI BAWAH INI DENGAN LINK FOTO SPESIAL -->
+                        <img src="./Asset/us.jpeg" 
+                             alt="Secret Reward" 
+                             class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <span class="bg-black/50 px-3 py-1 text-white pixel-font text-xs">SECRET UNLOCKED</span>
+                        </div>
+                    </div>
+
+                    <p class="text-white mb-6 pixel-font text-sm">You found the hidden treasure!</p>
+                    
+                    <!-- Reward Link Button -->
+                    <!-- GANTI 'href' DENGAN LINK GOOGLE DRIVE / HADIAH -->
+                    <a href="https://music.youtube.com/watch?v=Zq1Jg0H5fzc" target="_blank" class="block w-full btn-retro bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 pixel-font transition-all text-sm md:text-base">
+                        ACCESS SECRET PLAYLIST ▶️
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- FINAL SECTION -->
+        <footer class="h-screen flex flex-col items-center justify-center bg-black text-center p-4">
+            <h2 class="pixel-font text-3xl md:text-5xl text-white mb-4">Good Game, Well Played.</h2>
+            <p class="pixel-font text-lg md:text-xl text-green-400 mb-12">Proud of your progress so far.</p>
+            
+            <div class="mb-12 text-gray-400 text-lg">
+                <p>Happy Birthday, Bby.</p>
+                <p>I love you—quietly, deeply, always.</p>
+            </div>
+
+            <button onclick="claimHug()" class="btn-retro-pink bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 px-8 text-xl pixel-font flex items-center gap-2 animate-bounce">
+                <i data-lucide="heart-handshake" class="w-6 h-6"></i> CLAIM BIRTHDAY HUG
+            </button>
+
+            <p class="mt-8 text-xs text-gray-600 pixel-font">Made with ❤️ by Your Lovely GF</p>
+        </footer>
+
+    </main>
+
+    <script>
+        // --- SOUND EFFECT SYSTEM (Web Audio API) ---
+        // Generates simple beep sounds without external files
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            if (type === 'hover') {
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(400, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.05);
+            } else if (type === 'click') {
+                oscillator.type = 'square';
+                oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'win') {
+                oscillator.type = 'triangle';
+                oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+                oscillator.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // G5
+                oscillator.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.3); // C6
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.6);
+            } else if (type === 'flip') {
+                // Soft flip sound
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
+                oscillator.frequency.linearRampToValueAtTime(500, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.1);
+            }
+        }
+
+        // --- PLAY HAPPY BIRTHDAY TUNE ---
+        function playBirthdayTune() {
+             if (audioCtx.state === 'suspended') audioCtx.resume();
+             
+             const now = audioCtx.currentTime;
+             const notes = [
+                 { freq: 392, dur: 0.3, start: 0 },   // Hap
+                 { freq: 392, dur: 0.1, start: 0.4 }, // py
+                 { freq: 440, dur: 0.4, start: 0.6 }, // Birth
+                 { freq: 392, dur: 0.4, start: 1.1 }, // day
+                 { freq: 523.25, dur: 0.4, start: 1.6 }, // to
+                 { freq: 493.88, dur: 0.8, start: 2.1 }  // You
+             ];
+
+             notes.forEach(note => {
+                 const osc = audioCtx.createOscillator();
+                 const gain = audioCtx.createGain();
+                 osc.type = 'square'; // 8-bit Sound
+                 osc.frequency.value = note.freq;
+                 
+                 osc.connect(gain);
+                 gain.connect(audioCtx.destination);
+                 
+                 osc.start(now + note.start);
+                 gain.gain.setValueAtTime(0.1, now + note.start);
+                 gain.gain.exponentialRampToValueAtTime(0.01, now + note.start + note.dur - 0.05);
+                 osc.stop(now + note.start + note.dur);
+             });
+        }
+        
+        // --- CHARACTER SELECTION LOGIC ---
+        function selectCharacter(card) {
+            playSound('click');
+            
+            // Remove selected class from all cards
+            document.querySelectorAll('.char-card').forEach(c => {
+                c.classList.remove('selected');
+            });
+
+            // Add selected class to clicked card
+            card.classList.add('selected');
+
+            // Get data attributes
+            const charName = card.getAttribute('data-name');
+            const charMsg = card.getAttribute('data-msg');
+
+            // Update Selection Message
+            const msgContainer = document.getElementById('char-selection-msg');
+            const titleEl = document.getElementById('char-selection-title');
+            const descEl = document.getElementById('char-selection-desc');
+
+            titleEl.textContent = `YOU CHOSE: ${charName}`;
+            descEl.textContent = charMsg;
+
+            // Show selection message
+            msgContainer.style.opacity = '1';
+        }
+
+
+        // --- MEMORY GAME LOGIC ---
+        const gameBoard = document.getElementById('game-board');
+        const gameReward = document.getElementById('game-reward');
+        
+        const cardsArray = [
+            { name: 'heart', icon: '❤️' },
+            { name: 'cake', icon: '🎂' },
+            { name: 'star', icon: '⭐' },
+            { name: 'gift', icon: '🎁' },
+            { name: 'heart', icon: '❤️' },
+            { name: 'cake', icon: '🎂' },
+            { name: 'star', icon: '⭐' },
+            { name: 'gift', icon: '🎁' }
+        ];
+
+        let hasFlippedCard = false;
+        let lockBoard = false;
+        let firstCard, secondCard;
+        let matchCount = 0;
+
+        function initGame() {
+            // Shuffle
+            cardsArray.sort(() => 0.5 - Math.random());
+            
+            // Create HTML
+            cardsArray.forEach(item => {
+                const card = document.createElement('div');
+                card.classList.add('memory-card');
+                card.dataset.name = item.name;
+
+                const front = document.createElement('div');
+                front.classList.add('front-face');
+                front.innerText = item.icon;
+
+                const back = document.createElement('div');
+                back.classList.add('back-face');
+                back.innerText = '?'; // Or leave empty
+
+                card.appendChild(front);
+                card.appendChild(back);
+                gameBoard.appendChild(card);
+
+                card.addEventListener('click', flipCard);
+            });
+        }
+
+        function flipCard() {
+            if (lockBoard) return;
+            if (this === firstCard) return;
+
+            this.classList.add('flip');
+            playSound('flip');
+
+            if (!hasFlippedCard) {
+                // First click
+                hasFlippedCard = true;
+                firstCard = this;
+                return;
+            }
+
+            // Second click
+            secondCard = this;
+            checkForMatch();
+        }
+
+        function checkForMatch() {
+            let isMatch = firstCard.dataset.name === secondCard.dataset.name;
+            isMatch ? disableCards() : unflipCards();
+        }
+
+        function disableCards() {
+            firstCard.removeEventListener('click', flipCard);
+            secondCard.removeEventListener('click', flipCard);
+            playSound('hover'); // Simple success tick
+            
+            resetBoard();
+            matchCount++;
+            
+            if (matchCount === cardsArray.length / 2) {
+                setTimeout(winGame, 500);
+            }
+        }
+
+        function unflipCards() {
+            lockBoard = true;
+            setTimeout(() => {
+                firstCard.classList.remove('flip');
+                secondCard.classList.remove('flip');
+                resetBoard();
+            }, 1000);
+        }
+
+        function resetBoard() {
+            [hasFlippedCard, lockBoard] = [false, false];
+            [firstCard, secondCard] = [null, null];
+        }
+
+        function winGame() {
+            playSound('win');
+            gameBoard.style.display = 'none'; // Hide grid
+            gameReward.classList.remove('hidden'); // Show reward
+            
+            // Celebration Confetti
+            const end = Date.now() + 3000;
+            (function frame() {
+                confetti({
+                    particleCount: 5, angle: 60, spread: 55, origin: { x: 0 },
+                    colors: ['#ffd700', '#ffffff']
+                });
+                confetti({
+                    particleCount: 5, angle: 120, spread: 55, origin: { x: 1 },
+                    colors: ['#ffd700', '#ffffff']
+                });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+
+
+        // --- LOADING SYSTEM ---
+        document.addEventListener("DOMContentLoaded", () => {
+            lucide.createIcons();
+            initGame(); // Initialize the game
+
+            const loadingBar = document.getElementById('loading-bar');
+            const loadingText = document.getElementById('loading-text');
+            const loadingScreen = document.getElementById('loading-screen');
+            const app = document.getElementById('app');
+            const gameContent = document.getElementById('game-content');
+
+            // Custom Loading Texts
+            const loadingMessages = [
+                "Saving Level 24 progress...",
+                "Compiling memories...",
+                "Upgrading character stats...",
+                "Unlocking 'Quarter Life' expansion pack...",
+                "Generating birthday cake...",
+                "Finalizing Level 25 world..."
+            ];
+
+            // Simulate loading
+            let progress = 0;
+            const interval = setInterval(() => {
+                // Random speed for realistic feel
+                progress += Math.random() * 2; 
+                if (progress > 100) progress = 100;
+                
+                loadingBar.style.width = `${progress}%`;
+
+                // Update text based on progress chunk
+                if (progress < 100) {
+                    const msgIndex = Math.floor((progress / 100) * loadingMessages.length);
+                    loadingText.innerText = loadingMessages[Math.min(msgIndex, loadingMessages.length - 1)];
+                }
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    loadingText.innerText = "LEVEL 25 READY. PRESS START.";
+                    loadingText.classList.add('text-yellow-400', 'animate-pulse', 'font-bold');
+                    
+                    setTimeout(() => {
+                        loadingScreen.style.opacity = '0';
+                        loadingScreen.style.transition = 'opacity 0.8s ease-out';
+                        setTimeout(() => {
+                            loadingScreen.style.display = 'none';
+                            app.classList.remove('hidden');
+                        }, 800);
+                    }, 1500);
+                }
+            }, 50); 
+
+            // Add sound to all buttons
+            document.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('mouseenter', () => playSound('hover'));
+                if(btn.id !== 'gift-btn') { 
+                    btn.addEventListener('click', () => playSound('click'));
+                }
+            });
+
+            // Scroll Reveal Observer
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+        });
+
+        // --- START GAME FUNCTION ---
+        function startGame() {
+            playSound('win');
+            const gameContent = document.getElementById('game-content');
+            gameContent.classList.remove('hidden');
+            
+            // Scroll smoothly to the first section
+            gameContent.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // --- CLAIM HUG (MODAL + CONFETTI) ---
+        function claimHug() {
+            playSound('win');
+            
+            // 1. Trigger Confetti
+            const duration = 3000;
+            const end = Date.now() + duration;
+            (function frame() {
+                confetti({
+                    particleCount: 5, angle: 60, spread: 55, origin: { x: 0 },
+                    colors: ['#4ade80', '#f472b6', '#ffffff']
+                });
+                confetti({
+                    particleCount: 5, angle: 120, spread: 55, origin: { x: 1 },
+                    colors: ['#4ade80', '#f472b6', '#ffffff']
+                });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+
+            // 2. Show Modal
+            const modal = document.getElementById('hug-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Re-trigger CSS animations
+            const boy = modal.querySelector('.animate-hug-right');
+            const girl = modal.querySelector('.animate-hug-left');
+            
+            boy.style.animation = 'none';
+            girl.style.animation = 'none';
+            boy.offsetHeight; /* trigger reflow */
+            girl.offsetHeight; 
+            boy.style.animation = null; 
+            girl.style.animation = null;
+        }
+
+        // --- CLOSE MODAL ---
+        function closeHugModal() {
+            const modal = document.getElementById('hug-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // --- GIFT BOX LOGIC ---
+        const giftBtn = document.getElementById('gift-btn');
+        const giftContent = document.getElementById('gift-content');
+        
+        giftBtn.addEventListener('click', () => {
+            playBirthdayTune();
+            giftBtn.style.display = 'none';
+            giftContent.classList.remove('hidden');
+            
+            // Confetti explosion centered on the gift
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#ff69b4', '#ffd700', '#ffffff']
+            });
+        });
+
+    </script>
+</body>
+</html>
